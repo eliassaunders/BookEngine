@@ -4,9 +4,11 @@ import { Form, Button, Alert } from 'react-bootstrap';
 
 import { loginUser } from '../utils/API';
 import Auth from '../utils/auth';
+import { useMutation } from '@apollo/client';
+import { LOGIN_USER } from '../utils/mutations';
 
-const LoginForm = () => {
-  const [userFormData, setUserFormData] = useState({ email: '', password: '' });
+const LoginForm = props => {
+  /*const [userFormData, setUserFormData] = useState({ email: '', password: '' });
   const [validated] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
@@ -45,12 +47,46 @@ const LoginForm = () => {
       email: '',
       password: '',
     });
+  };*/
+
+  const [formState, setFormState] = useState({ email: '', password: '' });
+  const [login, { error }] = useMutation(LOGIN_USER);
+
+  // update state based on form input changes
+  const handleChange = event => {
+    const { name, value } = event.target;
+
+    setFormState({
+      ...formState,
+      [name]: value
+    });
+  };
+
+  // submit form
+  const handleFormSubmit = async event => {
+    event.preventDefault();
+
+    try {
+      const { data } = await login({
+        variables: { ...formState }
+      });
+
+      Auth.login(data.login.token);
+    } catch (e) {
+      console.error(e);
+    }
+
+    // clear form values
+    setFormState({
+      email: '',
+      password: ''
+    });
   };
 
   return (
     <>
-      <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
-        <Alert dismissible onClose={() => setShowAlert(false)} show={showAlert} variant='danger'>
+      <Form /*noValidate validated={validated}*/ onSubmit={handleFormSubmit}>
+        <Alert /*</Form>dismissible onClose={() => setShowAlert(false)} show={showAlert}*/ variant='danger'>
           Something went wrong with your login credentials!
         </Alert>
         <Form.Group>
@@ -59,8 +95,8 @@ const LoginForm = () => {
             type='text'
             placeholder='Your email'
             name='email'
-            onChange={handleInputChange}
-            value={userFormData.email}
+            onChange={handleChange}
+            value={formState.email}
             required
           />
           <Form.Control.Feedback type='invalid'>Email is required!</Form.Control.Feedback>
@@ -72,14 +108,14 @@ const LoginForm = () => {
             type='password'
             placeholder='Your password'
             name='password'
-            onChange={handleInputChange}
-            value={userFormData.password}
+            onChange={handleChange}
+            value={formState.password}
             required
           />
           <Form.Control.Feedback type='invalid'>Password is required!</Form.Control.Feedback>
         </Form.Group>
         <Button
-          disabled={!(userFormData.email && userFormData.password)}
+          disabled={!(formState.email && formState.password)}
           type='submit'
           variant='success'>
           Submit
